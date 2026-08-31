@@ -1,0 +1,89 @@
+{
+  "schema_version": "1.0",
+  "job_id": "JOB-1",
+  "ep": 1,
+  "video_type": "SHORT",
+  "stage": "script",
+  "from_agent": "A4",
+  "to_agent": "A5",
+  "status": "ok",
+  "created_at": "2026-09-01T09:00:00+09:00",
+  "payload": {
+    "ep": 1,
+    "video_type": "SHORT",
+    "title": "銀行に置いたお金、毎年減っています",
+    "channel": "お金の失敗検証チャンネル",
+    "script_version": "v1.0",
+    "resolution": {
+      "w": 1080,
+      "h": 1920
+    },
+    "scenes": [
+      {
+        "scene_id": "SC001",
+        "role": "hook",
+        "narration": "貯金してる人ほど、実は毎年、損しているかもしれません。",
+        "telop": "銀行のお金 毎年減ってる？",
+        "est_seconds": 4.0,
+        "visual": "number_focus：暗い背景に通帳の残高が少しずつ減るモーション",
+        "claim_refs": []
+      },
+      {
+        "scene_id": "SC002",
+        "role": "problem",
+        "narration": "去年百円だったパンが、今年は百十円。同じ一万円で買える量が、少しずつ減っています。これがインフレです。",
+        "telop": "物価は上がる / 現金は増えない",
+        "est_seconds": 8.0,
+        "visual": "diagram：同じ1万円札→買えるパンの数が減る対比図",
+        "claim_refs": [
+          "C01"
+        ]
+      },
+      {
+        "scene_id": "SC003",
+        "role": "body",
+        "narration": "たとえば、物価が毎年二パーセント上がると仮定すると、現金の実質的な価値は、十年でおよそ十八パーセント目減りする計算になります。",
+        "telop": "年2%の試算 → 10年で約18%目減り",
+        "est_seconds": 9.0,
+        "visual": "diagram：2%複利での実質価値の目減りグラフ（あくまで試算と明記）",
+        "claim_refs": [
+          "C02"
+        ]
+      },
+      {
+        "scene_id": "SC004",
+        "role": "conclusion",
+        "narration": "つまり、貯金イコール安全、とは限りません。何もしないことにも、リスクがあるんです。",
+        "telop": "貯金＝安全 ではない",
+        "est_seconds": 7.0,
+        "visual": "abstract_finance：天秤に「現金」と「インフレ」",
+        "claim_refs": []
+      },
+      {
+        "scene_id": "SC005",
+        "role": "cta",
+        "narration": "じゃあ、何をすればいいのか。続きは、プロフィールの動画で解説しています。",
+        "telop": "続き → プロフィールへ",
+        "est_seconds": 5.0,
+        "visual": "title_card：チャンネル名＋プロフ誘導",
+        "claim_refs": []
+      }
+    ],
+    "cta": "続きはプロフィールの動画で。",
+    "youtube": {
+      "description": "「貯金＝安全」と思っていませんか？ インフレで現金の価値がどう変わるかを60秒で解説します。\n\n※本動画は一般的な情報提供であり、投資助言ではありません。制度・数値は変わることがあります。実行の前にご自身で確認し、必要に応じて専門家にご相談ください。\n\n#新NISA #投資初心者 #インフレ #お金の勉強",
+      "tags": [
+        "新NISA",
+        "投資初心者",
+        "インフレ",
+        "資産形成",
+        "お金の勉強",
+        "貯金"
+      ],
+      "playlist": "第1章 入門・基礎",
+      "made_for_kids": false,
+      "ai_content_disclosure": true
+    },
+    "disclaimer": "本動画は一般的な情報提供であり、投資助言ではありません。実行の前にご自身で確認し、必要に応じて専門家にご相談ください。"
+  }
+}

@@ -1,0 +1,165 @@
+{
+  "name": "EP01 制作パイプライン (PoC)",
+  "meta": { "description": "Notion Job取得→調査→ファクトチェックゲート→台本→字幕→スライド→編集→QA→人間承認→YouTube予約投稿(直前) の司令塔。各AI/ローカル処理は Execute Command で pipeline/automation を叩く。APIレス構成。" },
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "n_trigger",
+      "name": "手動トリガー",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [-1120, 300]
+    },
+    {
+      "parameters": {
+        "assignments": { "assignments": [
+          { "id": "a1", "name": "ep", "type": "number", "value": 1 },
+          { "id": "a2", "name": "factoryRoot", "type": "string", "value": "={{ $env.FACTORY_ROOT || '/home/user/EA/youtube-factory' }}" },
+          { "id": "a3", "name": "notionDbId", "type": "string", "value": "798a4d93408f44b8a16acf9dde43c8fd" }
+        ] }
+      },
+      "id": "n_config",
+      "name": "設定 (EP番号)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-920, 300]
+    },
+    {
+      "parameters": {
+        "command": "=python3 {{ $json.factoryRoot }}/pipeline/run_ep01.py --stage research --ep {{ $json.ep }}"
+      },
+      "id": "n_research",
+      "name": "A2 調査 (一次情報)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [-720, 300],
+      "notesInFlow": true,
+      "notes": "本番はChatGPT+ブラウザ検索で一次情報を集め research/ に a2_research.json を書く。"
+    },
+    {
+      "parameters": {
+        "command": "=python3 {{ $node['設定 (EP番号)'].json.factoryRoot }}/pipeline/run_ep01.py --stage factcheck --ep {{ $node['設定 (EP番号)'].json.ep }}"
+      },
+      "id": "n_factcheck",
+      "name": "A3 事実・法務監査",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [-520, 300]
+    },
+    {
+      "parameters": {
+        "conditions": { "options": { "caseSensitive": true }, "combinator": "and", "conditions": [
+          { "id": "c1", "leftValue": "={{ JSON.parse($json.stdout).gate_passed }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true" } }
+        ] }
+      },
+      "id": "n_gate",
+      "name": "ファクトゲート通過?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [-320, 300]
+    },
+    {
+      "parameters": {
+        "command": "=python3 {{ $node['設定 (EP番号)'].json.factoryRoot }}/pipeline/run_ep01.py --stage build --ep {{ $node['設定 (EP番号)'].json.ep }}"
+      },
+      "id": "n_build",
+      "name": "A4-A9 台本→字幕→スライド→編集",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [-100, 200],
+      "notes": "台本(a4)→字幕(SRT)→スライドPNG→(音声wavがvoice/にあれば採用/無ければ無音尺)→FFmpegで EP01_FINAL_V01.mp4"
+    },
+    {
+      "parameters": {
+        "command": "=python3 {{ $node['設定 (EP番号)'].json.factoryRoot }}/pipeline/run_ep01.py --stage qa --ep {{ $node['設定 (EP番号)'].json.ep }}"
+      },
+      "id": "n_qa",
+      "name": "A10 品質検査",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [120, 200]
+    },
+    {
+      "parameters": {
+        "conditions": { "options": {}, "combinator": "and", "conditions": [
+          { "id": "q1", "leftValue": "={{ JSON.parse($json.stdout).passed }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true" } }
+        ] }
+      },
+      "id": "n_qagate",
+      "name": "QA合格?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [320, 200]
+    },
+    {
+      "parameters": {
+        "resume": "webhook",
+        "options": {}
+      },
+      "id": "n_approval",
+      "name": "人間承認ゲート (Wait)",
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [540, 120],
+      "notes": "承認URLを担当者に通知。承認POSTで再開→publish_metadata.json の human_approval.approved を true にする。"
+    },
+    {
+      "parameters": {
+        "command": "=python3 {{ $node['設定 (EP番号)'].json.factoryRoot }}/pipeline/run_ep01.py --stage publish_prep --ep {{ $node['設定 (EP番号)'].json.ep }} --approved-by n8n"
+      },
+      "id": "n_prep",
+      "name": "A11 公開メタ生成",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [760, 120]
+    },
+    {
+      "parameters": {
+        "command": "=cd {{ $node['設定 (EP番号)'].json.factoryRoot }}/automation/playwright && DRY_RUN=1 node youtube_studio_upload.js --meta ../../youtube-factory/YouTubeFactory/EP01/publish/publish_metadata.json"
+      },
+      "id": "n_upload",
+      "name": "A11 YouTube予約投稿(直前/DRY_RUN)",
+      "type": "n8n-nodes-base.executeCommand",
+      "typeVersion": 1,
+      "position": [980, 120],
+      "notes": "DRY_RUN=1 で予約投稿直前まで。本番は DRY_RUN=0 かつ承認済で実行。"
+    },
+    {
+      "parameters": {},
+      "id": "n_revise",
+      "name": "差し戻し (A2/A4へ)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [-100, 440],
+      "notes": "gate_passed=false → A0が原因工程へ差し戻す。"
+    },
+    {
+      "parameters": {},
+      "id": "n_qafail",
+      "name": "QA差し戻し",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [540, 320]
+    }
+  ],
+  "connections": {
+    "手動トリガー": { "main": [[{ "node": "設定 (EP番号)", "type": "main", "index": 0 }]] },
+    "設定 (EP番号)": { "main": [[{ "node": "A2 調査 (一次情報)", "type": "main", "index": 0 }]] },
+    "A2 調査 (一次情報)": { "main": [[{ "node": "A3 事実・法務監査", "type": "main", "index": 0 }]] },
+    "A3 事実・法務監査": { "main": [[{ "node": "ファクトゲート通過?", "type": "main", "index": 0 }]] },
+    "ファクトゲート通過?": { "main": [
+      [{ "node": "A4-A9 台本→字幕→スライド→編集", "type": "main", "index": 0 }],
+      [{ "node": "差し戻し (A2/A4へ)", "type": "main", "index": 0 }]
+    ] },
+    "A4-A9 台本→字幕→スライド→編集": { "main": [[{ "node": "A10 品質検査", "type": "main", "index": 0 }]] },
+    "A10 品質検査": { "main": [[{ "node": "QA合格?", "type": "main", "index": 0 }]] },
+    "QA合格?": { "main": [
+      [{ "node": "人間承認ゲート (Wait)", "type": "main", "index": 0 }],
+      [{ "node": "QA差し戻し", "type": "main", "index": 0 }]
+    ] },
+    "人間承認ゲート (Wait)": { "main": [[{ "node": "A11 公開メタ生成", "type": "main", "index": 0 }]] },
+    "A11 公開メタ生成": { "main": [[{ "node": "A11 YouTube予約投稿(直前/DRY_RUN)", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "pinData": {}
+}

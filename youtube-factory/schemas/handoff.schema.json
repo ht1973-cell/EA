@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "handoff.schema.json",
+  "title": "AgentHandoff",
+  "description": "全AIエージェント（A0〜A12）が入出力に使う共通エンベロープ。1本の動画=1 JOBを、各工程がこの形で受け渡す。中身(payload)は各エージェント専用スキーマに従う。",
+  "type": "object",
+  "required": ["schema_version", "job_id", "ep", "stage", "from_agent", "to_agent", "status", "created_at", "payload"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": { "type": "string", "const": "1.0" },
+    "job_id": { "type": "string", "description": "Notion JOB_ID (例: JOB-1)" },
+    "ep": { "type": "integer", "minimum": 1, "maximum": 52 },
+    "video_type": { "type": "string", "enum": ["LONG", "SHORT"] },
+    "stage": {
+      "type": "string",
+      "description": "どの工程の成果物か",
+      "enum": ["plan", "research", "factcheck", "script", "storyboard", "video", "voice", "thumbnail", "edit", "qa", "publish", "analytics"]
+    },
+    "from_agent": { "type": "string", "enum": ["A0","A1","A2","A3","A4","A5","A6","A7","A8","A9","A10","A11","A12","HUMAN"] },
+    "to_agent": { "type": "string", "enum": ["A0","A1","A2","A3","A4","A5","A6","A7","A8","A9","A10","A11","A12","HUMAN"] },
+    "status": { "type": "string", "enum": ["ok", "needs_revision", "blocked", "pending_human"] },
+    "created_at": { "type": "string", "format": "date-time" },
+    "revision": { "type": "integer", "minimum": 0, "default": 0 },
+    "notes": { "type": "string", "description": "差し戻し理由や申し送り" },
+    "artifacts": {
+      "type": "array",
+      "description": "生成した実ファイルへの参照（相対パス）",
+      "items": {
+        "type": "object",
+        "required": ["kind", "path"],
+        "properties": {
+          "kind": { "type": "string", "enum": ["json","md","srt","wav","mp3","png","jpg","mp4","txt"] },
+          "path": { "type": "string" },
+          "sha256": { "type": "string" }
+        }
+      }
+    },
+    "payload": { "type": "object", "description": "stage固有のデータ。対応スキーマ(a2_research 等)で検証する。" }
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "ep": 1,
+  "video_file": "EP01_FINAL_V01.mp4",
+  "thumbnail_file": "EP01_THUMB_V01.png",
+  "title": "銀行に置いたお金、毎年減っています",
+  "description": "「貯金＝安全」と思っていませんか？ インフレで現金の価値がどう変わるかを60秒で解説します。\n\n※本動画は一般的な情報提供であり、投資助言ではありません。制度・数値は変わることがあります。実行の前にご自身で確認し、必要に応じて専門家にご相談ください。\n\n#新NISA #投資初心者 #インフレ #お金の勉強",
+  "tags": [
+    "新NISA",
+    "投資初心者",
+    "インフレ",
+    "資産形成",
+    "お金の勉強",
+    "貯金"
+  ],
+  "playlist": "第1章 入門・基礎",
+  "visibility": "scheduled",
+  "scheduled_publish_at": "2026-09-02T07:00:00+09:00",
+  "made_for_kids": false,
+  "ai_content_disclosure": true,
+  "human_approval": {
+    "approved": false,
+    "approved_by": null,
+    "approved_at": null
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "a5_storyboard.schema.json",
+  "title": "A5StoryboardPayload",
+  "description": "A5演出の出力。各sceneを具体的なショット（背景種別・図解・アニメ指示）に落とす。A6映像/A9編集が参照。",
+  "type": "object",
+  "required": ["ep", "shots"],
+  "additionalProperties": false,
+  "properties": {
+    "ep": { "type": "integer" },
+    "shots": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["scene_id", "bg_type"],
+        "properties": {
+          "scene_id": { "type": "string" },
+          "bg_type": { "type": "string", "enum": ["number_focus", "diagram", "broll", "abstract_finance", "title_card"], "description": "設計書§9の優先順位（数字・図解を最優先）" },
+          "diagram_spec": { "type": "string", "description": "図解が必要な場合の内容（例: 信号機3色バー）" },
+          "broll_query": { "type": "string", "description": "A6/Veoへの映像プロンプト" },
+          "motion": { "type": "string", "enum": ["static", "kenburns", "fade", "reveal"], "default": "fade" }
+        }
+      }
+    }
+  }
+}

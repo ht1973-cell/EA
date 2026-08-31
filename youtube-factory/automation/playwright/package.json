@@ -1,0 +1,15 @@
+{
+  "name": "youtube-factory-automation",
+  "version": "1.0.0",
+  "private": true,
+  "description": "APIレス連携のためのPlaywrightブラウザ自動操作（A6/A7/A11）",
+  "type": "commonjs",
+  "scripts": {
+    "elevenlabs": "node elevenlabs.js",
+    "upload": "node youtube_studio_upload.js"
+  },
+  "dependencies": {
+    "playwright": "^1.47.0",
+    "minimist": "^1.2.8"
+  }
+}

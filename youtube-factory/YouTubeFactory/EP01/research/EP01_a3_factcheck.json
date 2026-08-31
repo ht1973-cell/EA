@@ -1,0 +1,30 @@
+{
+  "ep": 1,
+  "checked_at": "2026-08-31",
+  "gate_passed": true,
+  "reviewer": "A3(自動) ※公開前に人間の最終確認を推奨",
+  "claims": [
+    {
+      "claim_id": "C01",
+      "claim": "インフレ（物価上昇）が続くと、現金の実質的な購買力は低下する。",
+      "source": "https://www.boj.or.jp/about/education/oshiete/ , https://www.stat.go.jp/data/cpi/",
+      "publisher": "日本銀行 / 総務省統計局",
+      "confirmed_at": "2026-08-31",
+      "location": "物価の安定とは / CPIの定義",
+      "verdict": "OK",
+      "risk": "medium",
+      "comment": "定性的・普遍的な事実。特定年度の数値は主張していない。"
+    },
+    {
+      "claim_id": "C02",
+      "claim": "物価が年2%上がると仮定すると、現金の実質価値は10年で約18%目減りする。",
+      "source": "internal://arithmetic (1 - 1/1.02^10)",
+      "publisher": "算術（複利）",
+      "confirmed_at": "2026-08-31",
+      "location": "台本 SC003",
+      "verdict": "OK",
+      "risk": "high",
+      "comment": "『仮定』の算術例として提示。実測値=18.0%。現在の実際のインフレ率を断定していない点をテロップで明記済み（『試算』）。"
+    }
+  ]
+}

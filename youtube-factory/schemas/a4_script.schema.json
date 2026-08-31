@@ -1,0 +1,51 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "a4_script.schema.json",
+  "title": "A4ScriptPayload",
+  "description": "A4脚本エージェントの出力であり、A5/A7/A9が消費する中心データ。scenes配列がナレーション・テロップ・尺・映像指示・根拠参照を1カット単位で保持する。pipeline/run_ep01.py はこのJSONだけで字幕・スライド・尺計算・編集まで実行できる。",
+  "type": "object",
+  "required": ["ep", "video_type", "title", "channel", "scenes", "cta", "youtube", "disclaimer"],
+  "additionalProperties": false,
+  "properties": {
+    "ep": { "type": "integer" },
+    "video_type": { "type": "string", "enum": ["LONG", "SHORT"] },
+    "title": { "type": "string" },
+    "channel": { "type": "string" },
+    "script_version": { "type": "string" },
+    "resolution": {
+      "type": "object",
+      "description": "SHORT=1080x1920, LONG=1920x1080",
+      "properties": { "w": { "type": "integer" }, "h": { "type": "integer" } }
+    },
+    "scenes": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": ["scene_id", "role", "narration", "telop", "est_seconds"],
+        "properties": {
+          "scene_id": { "type": "string", "description": "例: SC001" },
+          "role": { "type": "string", "enum": ["hook", "problem", "body", "turn", "conclusion", "cta"] },
+          "narration": { "type": "string", "description": "読み上げる本文（TTS入力）" },
+          "telop": { "type": "string", "description": "画面テロップ（字幕とは別の強調文）" },
+          "est_seconds": { "type": "number", "description": "想定尺（秒）。TTS未生成時のタイムライン計算に使用。" },
+          "visual": { "type": "string", "description": "A5/A6向け 映像・図解指示" },
+          "claim_refs": { "type": "array", "items": { "type": "string" }, "description": "この発話が依存するclaim_id" }
+        }
+      }
+    },
+    "cta": { "type": "string" },
+    "youtube": {
+      "type": "object",
+      "required": ["description", "tags"],
+      "properties": {
+        "description": { "type": "string" },
+        "tags": { "type": "array", "items": { "type": "string" } },
+        "playlist": { "type": "string" },
+        "made_for_kids": { "type": "boolean", "default": false },
+        "ai_content_disclosure": { "type": "boolean", "description": "合成音声・AI生成素材を含む場合true" }
+      }
+    },
+    "disclaimer": { "type": "string", "description": "投資助言でない旨・専門家相談の注意書き（金融必須）" }
+  }
+}

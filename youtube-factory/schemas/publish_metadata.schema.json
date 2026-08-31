@@ -1,0 +1,32 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "publish_metadata.schema.json",
+  "title": "A11PublishMetadata",
+  "description": "A11公開エージェント（YouTube Studioブラウザ操作）への入力。人間承認ゲート通過後にのみ scheduled_publish_at で予約公開する。PoCではこのファイル生成＝『予約投稿直前』の到達点。",
+  "type": "object",
+  "required": ["ep", "video_file", "title", "description", "tags", "visibility", "human_approval"],
+  "additionalProperties": false,
+  "properties": {
+    "ep": { "type": "integer" },
+    "video_file": { "type": "string", "description": "アップロードするMP4の絶対/相対パス" },
+    "thumbnail_file": { "type": "string" },
+    "title": { "type": "string", "maxLength": 100 },
+    "description": { "type": "string", "maxLength": 5000 },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "playlist": { "type": "string" },
+    "visibility": { "type": "string", "enum": ["private", "unlisted", "public", "scheduled"] },
+    "scheduled_publish_at": { "type": "string", "format": "date-time", "description": "予約公開日時（JST→ISO8601）" },
+    "made_for_kids": { "type": "boolean", "default": false },
+    "ai_content_disclosure": { "type": "boolean", "description": "『変更または合成されたコンテンツ』の開示設定" },
+    "human_approval": {
+      "type": "object",
+      "required": ["approved"],
+      "description": "設計書§11の必須ゲート。approved=false の間は A11 はアップロードしない。",
+      "properties": {
+        "approved": { "type": "boolean" },
+        "approved_by": { "type": "string" },
+        "approved_at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

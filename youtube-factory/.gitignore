@@ -1,0 +1,14 @@
+# 機密・ログイン状態
+.env
+profiles/
+logs/
+
+# 中間・生成物（PoCの EP01 成果物はサンプルとして残すが、作業中間物は無視）
+**/edit/_work/
+node_modules/
+__pycache__/
+*.pyc
+
+# 大きな素材（本番の映像/音声はGit管理外を推奨。PoCの軽量サンプルのみ追跡）
+YouTubeFactory/EP[0-9][0-9]/video/*.mp4
+YouTubeFactory/EP[0-9][0-9]/voice/*.wav

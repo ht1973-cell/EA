@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "a10_qa.schema.json",
+  "title": "A10QAPayload",
+  "description": "A10品質検査の出力。技術面（尺・解像度・音量・字幕同期・欠落）と内容面（ファクトゲート通過・禁止表現）を機械＋AIで検査。",
+  "type": "object",
+  "required": ["ep", "passed", "checks", "checked_at"],
+  "additionalProperties": false,
+  "properties": {
+    "ep": { "type": "integer" },
+    "checked_at": { "type": "string", "format": "date-time" },
+    "passed": { "type": "boolean" },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "result"],
+        "properties": {
+          "name": { "type": "string", "description": "例: duration_within_range, has_subtitles, factcheck_gate, no_forbidden_phrases, audio_present, resolution_ok" },
+          "result": { "type": "string", "enum": ["pass", "warn", "fail"] },
+          "detail": { "type": "string" }
+        }
+      }
+    },
+    "final_video": { "type": "string", "description": "検査対象MP4の相対パス" }
+  }
+}

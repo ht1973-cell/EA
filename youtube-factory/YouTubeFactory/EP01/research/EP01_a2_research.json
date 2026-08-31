@@ -1,0 +1,34 @@
+{
+  "ep": 1,
+  "topic": "インフレと現金の実質価値",
+  "collected_at": "2026-08-31",
+  "sources": [
+    {
+      "claim_ref": "C01",
+      "title": "消費者物価指数（CPI）｜統計局",
+      "url": "https://www.stat.go.jp/data/cpi/",
+      "publisher": "総務省統計局",
+      "primary": true,
+      "quote": "消費者物価指数は、消費者が購入する財・サービスの価格変動を示す指標。上昇は同じ金額で買える量の減少を意味する。",
+      "retrieved_at": "2026-08-31"
+    },
+    {
+      "claim_ref": "C01",
+      "title": "物価の安定とは（教えて！にちぎん）",
+      "url": "https://www.boj.or.jp/about/education/oshiete/",
+      "publisher": "日本銀行",
+      "primary": true,
+      "quote": "物価が持続的に上昇すると、貨幣の価値（購買力）は低下する。",
+      "retrieved_at": "2026-08-31"
+    },
+    {
+      "claim_ref": "C02",
+      "title": "算術検証（複利）: 1 - 1/1.02^10",
+      "url": "internal://arithmetic",
+      "publisher": "パイプライン内計算",
+      "primary": true,
+      "quote": "年2%・10年での実質価値目減り率 = 18.0%（台本『約18%』と整合）",
+      "retrieved_at": "2026-08-31"
+    }
+  ]
+}

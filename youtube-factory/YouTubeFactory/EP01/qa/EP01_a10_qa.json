@@ -1,0 +1,49 @@
+{
+  "ep": 1,
+  "checked_at": "2026-09-01T07:43:43.555561+09:00",
+  "passed": true,
+  "checks": [
+    {
+      "name": "video_exists",
+      "result": "pass",
+      "detail": "464681 bytes"
+    },
+    {
+      "name": "has_video_stream",
+      "result": "pass"
+    },
+    {
+      "name": "audio_present",
+      "result": "pass",
+      "detail": "PoCは無音stub（本番はElevenLabs音声）"
+    },
+    {
+      "name": "has_subtitles",
+      "result": "pass",
+      "detail": "mov_textソフト字幕"
+    },
+    {
+      "name": "resolution_ok",
+      "result": "pass",
+      "detail": "1080x1920"
+    },
+    {
+      "name": "duration_within_range",
+      "result": "pass",
+      "detail": "33.02s (SHORT<=60)"
+    },
+    {
+      "name": "factcheck_gate",
+      "result": "pass"
+    },
+    {
+      "name": "no_forbidden_phrases",
+      "result": "pass"
+    },
+    {
+      "name": "disclaimer_present",
+      "result": "pass"
+    }
+  ],
+  "final_video": "/home/user/EA/youtube-factory/YouTubeFactory/EP01/edit/EP01_FINAL_V01.mp4"
+}
