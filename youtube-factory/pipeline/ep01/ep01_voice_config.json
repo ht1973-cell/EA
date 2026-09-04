@@ -1,0 +1,46 @@
+{
+  "_comment": "A7音声の確定設定。Gradyの声を『サンプル文が4秒で話し終わる速さ』に基準化した結果、seed_audioモデルでspeech_rate=60が最適と判定（speech_rate=0時の基準サンプルは6.4秒、60で3.99秒）。以後EP01〜52はこの設定を既定値とする。",
+  "provider": "higgsfield",
+  "model": "seed_audio",
+  "voice_type": "preset",
+  "voice_name": "Grady",
+  "voice_id": "e2a2d2e6-9ed2-59cd-82af-feaa27f8a678",
+  "speech_rate": 60,
+  "loudness_rate": 0,
+  "pitch_rate": 0,
+  "sample_rate": 24000,
+  "format": "wav",
+  "calibration": {
+    "sample_text": "貯金している人ほど、実は毎年、損をしているかもしれません。",
+    "target_seconds": 4.0,
+    "measured_at_rate_0": 6.4,
+    "measured_at_rate_60": 3.99
+  },
+  "ep01_scenes": [
+    {
+      "scene_id": "SC001",
+      "duration_sec": 3.230541666666667,
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IlIlA4kpYT9BmeuKbGBxdvEHaX/hf_20260904_035443_466c3120-a686-42e0-bc54-bcce35d1e589.wav"
+    },
+    {
+      "scene_id": "SC002",
+      "duration_sec": 6.295875,
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IlIlA4kpYT9BmeuKbGBxdvEHaX/hf_20260904_035522_a4b3dde3-c189-485a-ac7f-bc0a8b1f9195.wav"
+    },
+    {
+      "scene_id": "SC003",
+      "duration_sec": 8.121666666666666,
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IlIlA4kpYT9BmeuKbGBxdvEHaX/hf_20260904_035620_3b39b7d9-010e-4656-b134-5974ec2ba54b.wav"
+    },
+    {
+      "scene_id": "SC004",
+      "duration_sec": 4.363208333333334,
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IlIlA4kpYT9BmeuKbGBxdvEHaX/hf_20260904_035714_b1895dee-a143-4b6a-a95c-0cd68e6cac08.wav"
+    },
+    {
+      "scene_id": "SC005",
+      "duration_sec": 4.564916666666667,
+      "result_url": "https://d8j0ntlcm91z4.cloudfront.net/user_3IlIlA4kpYT9BmeuKbGBxdvEHaX/hf_20260904_035758_0d7f78f9-9072-47af-94ec-034582480d6c.wav"
+    }
+  ]
+}
