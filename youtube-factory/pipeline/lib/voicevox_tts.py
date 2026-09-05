@@ -14,7 +14,12 @@ VOICEVOXはユーザーのPC上でローカルHTTPサーバーとして動く
 
 使い方:
   python3 pipeline/lib/voicevox_tts.py --list-speakers
-  python3 pipeline/lib/voicevox_tts.py --ep 1 --speaker 13
+  python3 pipeline/lib/voicevox_tts.py --ep 1 --speaker-name 青山龍星
+  python3 pipeline/lib/voicevox_tts.py --ep 1 --speaker-name 青山龍星 --style ノーマル
+  python3 pipeline/lib/voicevox_tts.py --ep 1 --speaker 13   # idを直接指定する場合
+
+speaker idはVOICEVOXのバージョンによってズレることがあるため、
+IDの丸暗記ではなく --speaker-name（＋任意で --style）での指定を推奨する。
 """
 import argparse
 import json
@@ -53,6 +58,33 @@ def list_speakers(base_url=DEFAULT_BASE_URL):
         for style in sp["styles"]:
             out.append({"name": sp["name"], "style": style["name"], "id": style["id"]})
     return out
+
+
+def resolve_speaker_id(name: str, style: str = None, base_url: str = DEFAULT_BASE_URL) -> int:
+    """話者名(例:'青山龍星')からspeaker idを引く。
+
+    speaker idはVOICEVOXのバージョン更新でズレることがあるため、
+    IDを決め打ちせず毎回 /speakers から名前で解決する。styleを
+    指定しない場合は「ノーマル」を優先し、無ければ最初に見つかった
+    スタイルを使う。
+    """
+    candidates = [sp for sp in list_speakers(base_url) if sp["name"] == name]
+    if not candidates:
+        all_names = sorted({sp["name"] for sp in list_speakers(base_url)})
+        raise ValueError(
+            f"話者 '{name}' が見つかりません。--list-speakers で確認してください。"
+            f"\n利用可能な話者: {', '.join(all_names)}"
+        )
+    if style:
+        for sp in candidates:
+            if sp["style"] == style:
+                return sp["id"]
+        styles = [sp["style"] for sp in candidates]
+        raise ValueError(f"話者 '{name}' に style '{style}' がありません。利用可能: {styles}")
+    for sp in candidates:
+        if sp["style"] == "ノーマル":
+            return sp["id"]
+    return candidates[0]["id"]
 
 
 def synthesize(text: str, speaker_id: int, base_url=DEFAULT_BASE_URL) -> bytes:
@@ -100,7 +132,9 @@ def main():
     ap.add_argument("--base-url", default=DEFAULT_BASE_URL)
     ap.add_argument("--list-speakers", action="store_true", help="利用可能な話者一覧を表示して終了")
     ap.add_argument("--ep", type=int, default=1)
-    ap.add_argument("--speaker", type=int, help="使用する speaker id (--list-speakers で確認)")
+    ap.add_argument("--speaker", type=int, help="使用する speaker id を直接指定する場合")
+    ap.add_argument("--speaker-name", help="話者名で指定する場合（例: 青山龍星）。推奨。")
+    ap.add_argument("--style", help="--speaker-name と併用。スタイル名（例: ノーマル）。省略時はノーマル優先。")
     a = ap.parse_args()
 
     if a.list_speakers:
@@ -108,11 +142,17 @@ def main():
             print(f"id={sp['id']:>4}  {sp['name']} / {sp['style']}")
         return
 
-    if a.speaker is None:
-        print("エラー: --speaker <id> を指定してください（--list-speakers で確認できます）")
+    if a.speaker is not None:
+        speaker_id = a.speaker
+    elif a.speaker_name:
+        speaker_id = resolve_speaker_id(a.speaker_name, a.style, a.base_url)
+        print(f"'{a.speaker_name}'" + (f"({a.style})" if a.style else "") + f" -> speaker id={speaker_id}")
+    else:
+        print("エラー: --speaker-name <名前> または --speaker <id> を指定してください"
+              "（--list-speakers で確認できます）")
         sys.exit(1)
 
-    generate_episode(a.ep, a.speaker, a.base_url)
+    generate_episode(a.ep, speaker_id, a.base_url)
 
 
 if __name__ == "__main__":
