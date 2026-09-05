@@ -34,8 +34,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(HERE))  # youtube-factory/
 
 
-def _post(url, data=None, timeout=30):
+def _post(url, data=None, timeout=30, json_body=False):
     req = urllib.request.Request(url, data=data, method="POST")
+    if json_body:
+        req.add_header("Content-Type", "application/json")
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return resp.read()
 
@@ -99,7 +101,7 @@ def synthesize(text: str, speaker_id: int, base_url=DEFAULT_BASE_URL) -> bytes:
     query_json = _post(f"{base_url}/audio_query?{q.decode()}")
 
     q2 = urllib.parse.urlencode({"speaker": speaker_id}).encode()
-    wav = _post(f"{base_url}/synthesis?{q2.decode()}", data=query_json)
+    wav = _post(f"{base_url}/synthesis?{q2.decode()}", data=query_json, json_body=True)
     return wav
 
 
