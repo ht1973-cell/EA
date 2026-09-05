@@ -1,0 +1,37 @@
+{
+  "ep": 1,
+  "checked_at": "2026-09-04T15:36:22.294564+09:00",
+  "scenes": [
+    {
+      "scene_id": "SC001",
+      "duration_sec": 4.0,
+      "anomaly": false,
+      "detail": "正常範囲"
+    },
+    {
+      "scene_id": "SC002",
+      "duration_sec": 8.0,
+      "anomaly": false,
+      "detail": "正常範囲"
+    },
+    {
+      "scene_id": "SC003",
+      "duration_sec": 9.0,
+      "anomaly": false,
+      "detail": "正常範囲"
+    },
+    {
+      "scene_id": "SC004",
+      "duration_sec": 7.0,
+      "anomaly": false,
+      "detail": "正常範囲"
+    },
+    {
+      "scene_id": "SC005",
+      "duration_sec": 5.0,
+      "anomaly": false,
+      "detail": "正常範囲"
+    }
+  ],
+  "anomalies": []
+}

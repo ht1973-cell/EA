@@ -23,7 +23,7 @@ from datetime import datetime, timezone, timedelta
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)                       # youtube-factory/
 sys.path.insert(0, os.path.join(HERE, "lib"))
-import factcheck, slides, subtitles, tts_stub, assemble   # noqa: E402
+import factcheck, slides, subtitles, tts_stub, assemble, tts_lint   # noqa: E402
 
 JST = timezone(timedelta(hours=9))
 
@@ -41,6 +41,25 @@ def job_dir(ep):
     for sub in ["research", "script", "voice", "video", "thumbnail", "subtitle", "edit", "qa", "publish"]:
         os.makedirs(os.path.join(d, sub), exist_ok=True)
     return d
+
+
+def wav_is_real_narration(wav, ffmpeg, silence_threshold_db=-45.0):
+    """A7の無音stub(プレースホルダ)か、Higgsfield等の実ナレーションかを判定する。
+
+    stubはanullsrcで生成した完全な無音のため、ffmpegのvolumedetectで
+    最大音量がほぼ-∞dBになる。実音声はしゃべり声の分だけ十分な音量を持つ
+    ため、閾値を超えていれば「検査対象の実音声」とみなす。
+    """
+    try:
+        r = subprocess.run([ffmpeg, "-i", wav, "-af", "volumedetect", "-f", "null", "-"],
+                          capture_output=True, text=True)
+        for line in r.stderr.splitlines():
+            if "max_volume:" in line:
+                val = line.split("max_volume:")[1].strip().split(" ")[0]
+                return float(val) > silence_threshold_db
+    except Exception:
+        pass
+    return False
 
 
 def load_script(ep):
@@ -80,6 +99,13 @@ def stage_build(ep):
     with open(os.path.join(jd, "script", f"EP{ep:02d}_a4_script.json"), "w", encoding="utf-8") as f:
         json.dump(doc, f, ensure_ascii=False, indent=2)
 
+    # A4品質ゲート: narration(表示用)からtts_prompt(合成用の開き読み)を
+    # 自動生成する。数字の誤読(「十八」→『じゅうばち』等)や専門用語の誤読
+    # (「貯金」→『じょきん』等)を、人手の目視チェックに頼らず構造的に防ぐ。
+    for sc in scenes:
+        if not sc.get("tts_prompt"):
+            sc["tts_prompt"] = tts_lint.build_tts_prompt(sc["narration"])
+
     # 尺（voice優先→est_seconds）
     voice_dir = os.path.join(jd, "voice")
     durations = subtitles.compute_durations(scenes, voice_dir, ep)
@@ -92,6 +118,41 @@ def stage_build(ep):
         voice_paths.append(wav)
     # 実音声を使った場合の再計測
     durations = subtitles.compute_durations(scenes, voice_dir, ep)
+
+    # A10品質ゲート(音声): 実ナレーションが置かれている場合、文字数から
+    # 想定される尺と実測尺を突き合わせ、大きく乖離していればノイズ混入・
+    # 幻聴的アーティファクト・無音excessの疑いとして検出する。異常があれば
+    # ここで build を止め、壊れた音声のまま最終動画に焼き込むことを防ぐ
+    # （「ノイズが起きないように成果物を作る」ことを工程として強制する）。
+    anomalies = []
+    voice_report = []
+    for sc, dur in zip(scenes, durations):
+        wav = os.path.join(voice_dir, f"EP{ep:02d}_{sc['scene_id']}_NARRATION_V01.wav")
+        # 無音stub(プレースホルダ)は検査対象外。実ナレーションのみ検査。
+        text_for_check = sc.get("tts_prompt") or sc["narration"]
+        is_anom, detail = tts_lint.check_duration_anomaly(text_for_check, dur)
+        voice_report.append({"scene_id": sc["scene_id"], "duration_sec": round(dur, 2),
+                              "anomaly": is_anom, "detail": detail})
+        if is_anom and os.path.exists(wav) and os.path.getsize(wav) > 0:
+            # 無音stub(est_secondsそのまま)は異常判定に含めない。
+            # 実音声ダウンロード後の再ビルド時のみ有効な検査。
+            if wav_is_real_narration(wav, ff):
+                anomalies.append((sc["scene_id"], detail))
+
+    os.makedirs(os.path.join(jd, "qa"), exist_ok=True)
+    with open(os.path.join(jd, "qa", f"EP{ep:02d}_voice_anomaly_report.json"), "w", encoding="utf-8") as f:
+        json.dump({"ep": ep, "checked_at": datetime.now(JST).isoformat(),
+                   "scenes": voice_report, "anomalies": [a[0] for a in anomalies]},
+                  f, ensure_ascii=False, indent=2)
+
+    if anomalies:
+        detail_lines = "\n".join(f"  - {sid}: {detail}" for sid, detail in anomalies)
+        raise RuntimeError(
+            "音声の異常検知でNGになったシーンがあります。ノイズ混入・幻聴的\n"
+            "アーティファクト・読み飛ばしの疑いがあるため、最終動画への焼き込みを\n"
+            "停止しました。該当シーンの音声を再生成してから再度buildしてください:\n"
+            + detail_lines
+        )
 
     # 字幕SRT
     srt = os.path.join(jd, "subtitle", f"EP{ep:02d}.srt")
@@ -155,6 +216,15 @@ def stage_qa(ep):
     text_all = " ".join(s["narration"] + s["telop"] for s in pl["scenes"])
     has_forbidden = any(w in text_all for w in forbidden)
 
+    voice_report_path = os.path.join(jd, "qa", f"EP{ep:02d}_voice_anomaly_report.json")
+    voice_anomaly_ok = True
+    voice_anomaly_detail = "レポート未生成(build未実行)"
+    if os.path.exists(voice_report_path):
+        vr = json.load(open(voice_report_path, encoding="utf-8"))
+        voice_anomaly_ok = len(vr.get("anomalies", [])) == 0
+        voice_anomaly_detail = (f"異常なし({len(vr['scenes'])}シーン検査)" if voice_anomaly_ok
+                                else f"異常検知: {vr['anomalies']}")
+
     checks = [
         {"name": "video_exists", "result": "pass" if os.path.exists(mp4) and os.path.getsize(mp4) > 0 else "fail",
          "detail": f"{os.path.getsize(mp4) if os.path.exists(mp4) else 0} bytes"},
@@ -171,6 +241,8 @@ def stage_qa(ep):
         {"name": "factcheck_gate", "result": "pass" if fc["gate_passed"] else "fail"},
         {"name": "no_forbidden_phrases", "result": "fail" if has_forbidden else "pass"},
         {"name": "disclaimer_present", "result": "pass" if pl.get("disclaimer") else "fail"},
+        {"name": "voice_anomaly_check", "result": "pass" if voice_anomaly_ok else "fail",
+         "detail": voice_anomaly_detail},
     ]
     passed = all(c["result"] != "fail" for c in checks)
     qa = {"ep": ep, "checked_at": datetime.now(JST).isoformat(), "passed": passed,

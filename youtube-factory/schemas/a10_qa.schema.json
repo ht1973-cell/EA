@@ -16,7 +16,7 @@
         "type": "object",
         "required": ["name", "result"],
         "properties": {
-          "name": { "type": "string", "description": "例: duration_within_range, has_subtitles, factcheck_gate, no_forbidden_phrases, audio_present, resolution_ok" },
+          "name": { "type": "string", "description": "例: duration_within_range, has_subtitles, factcheck_gate, no_forbidden_phrases, audio_present, resolution_ok, voice_anomaly_check" },
           "result": { "type": "string", "enum": ["pass", "warn", "fail"] },
           "detail": { "type": "string" }
         }

@@ -26,7 +26,9 @@
         "properties": {
           "scene_id": { "type": "string", "description": "例: SC001" },
           "role": { "type": "string", "enum": ["hook", "problem", "body", "turn", "conclusion", "cta"] },
-          "narration": { "type": "string", "description": "読み上げる本文（TTS入力）" },
+          "narration": { "type": "string", "description": "画面表示・字幕用の正しい漢字表記。TTSには直接渡さない。" },
+          "tts_prompt": { "type": "string", "description": "音声合成に渡す開き読みテキスト。pipeline/lib/tts_lint.py の build_tts_prompt(narration) で自動生成される（数字の連濁誤読・専門用語の誤読を辞書とルールベース変換で構造的に防ぐ）。省略時はbuild時に自動生成される。" },
+          "tts_note": { "type": "string", "description": "誤読修正の経緯や、テキスト正規化では解決できないTTSエンジン側の既知の癖を記録する監査ログ。" },
           "telop": { "type": "string", "description": "画面テロップ（字幕とは別の強調文）" },
           "est_seconds": { "type": "number", "description": "想定尺（秒）。TTS未生成時のタイムライン計算に使用。" },
           "visual": { "type": "string", "description": "A5/A6向け 映像・図解指示" },

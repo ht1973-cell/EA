@@ -1,6 +1,6 @@
 {
   "ep": 1,
-  "checked_at": "2026-09-01T07:43:43.555561+09:00",
+  "checked_at": "2026-09-04T15:36:31.198409+09:00",
   "passed": true,
   "checks": [
     {
@@ -43,6 +43,11 @@
     {
       "name": "disclaimer_present",
       "result": "pass"
+    },
+    {
+      "name": "voice_anomaly_check",
+      "result": "pass",
+      "detail": "異常なし(5シーン検査)"
     }
   ],
   "final_video": "/home/user/EA/youtube-factory/YouTubeFactory/EP01/edit/EP01_FINAL_V01.mp4"
