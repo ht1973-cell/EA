@@ -19,6 +19,14 @@ LLM を使ったトレード分析用の再利用可能なプロンプト 7 本�
 | 6 | Trading Journal Analyzer | [06_trading_journal_analyzer.md](06_trading_journal_analyzer.md) | 直近 20 トレードの癖・バイアス分析 |
 | 7 | Fully Automated Trading Plan | [07_fully_automated_trading_plan.md](07_fully_automated_trading_plan.md) | タイムスタンプ付きの 1 日トレード計画 |
 
+## Examples / 実行例
+
+Worked runs live in [examples/](examples/). Each one stores the input data, the script that produced every number, and the verification level of each claim.
+
+| Date | Prompt | Instrument | File |
+|------|--------|------------|------|
+| 2026-09-12 | 2 Automated Technical Analyst | GOLD (GCUSD) | [examples/2026-09-12_GOLD_prompt02_technical_analyst.md](examples/2026-09-12_GOLD_prompt02_technical_analyst.md) |
+
 ## How to use / 使い方
 
 1. Open the prompt file and copy the block under **Prompt (EN)** or **プロンプト (JA)**.
