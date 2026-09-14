@@ -1,10 +1,8 @@
 #!/usr/bin/env python3
-"""SEI (Structural Edge Index) backtest on GOLD daily bars.
+"""SEI (Structural Edge Index) backtest: ATR-free trading on GOLD daily bars.
 
-Compares multiple stop/filter approaches — ATR, swing-based, percentage-based,
-and composite indicators — without presupposing any single method as superior.
-ATR has shown mixed results across EA development history: sometimes effective,
-sometimes detrimental. This framework exists to objectively evaluate alternatives.
+Compares ATR-based approach (Variant J/K) against SEI-based alternatives.
+Uses same data format and metrics as backtest_prompt04.py for fair comparison.
 
 Usage: python3 backtest_sei.py GCUSD_daily.csv
 """
