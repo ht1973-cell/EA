@@ -29,8 +29,8 @@ enum ENUM_STOP_MODE
 input group "=== DPO天底インジケーター設定 ==="
 input string InpIndicatorName          = "DPO_Tenzoko_signal_v2.01"; // インジケーターファイル名
 input ENUM_TIMEFRAMES InpIndicatorTF   = PERIOD_M20;       // インジケーター計算タイムフレーム
-input int    InpBuyBufferIdx           = 7;                // 天底BUYバッファ番号
-input int    InpSellBufferIdx          = 8;                // 天底SELLバッファ番号
+input int    InpBuyBufferIdx           = 5;                // SwingBUYバッファ番号 (v2.01=5, v1.02=7)
+input int    InpSellBufferIdx          = 6;                // SwingSELLバッファ番号 (v2.01=6, v1.02=8)
 input int    InpDPO_Period             = 20;               // DPO期間
 input int    InpDPO_MAType             = 0;                // DPO MA方式 (0=SMA, 1=EMA)
 input int    InpMADPO_Period           = 20;               // MADPO期間
@@ -39,9 +39,12 @@ input int    InpAppliedPrice           = 1;                // 適用価格 (1=CL
 input int    InpMaxCalcBars            = 3000;             // 最大計算バー数
 input double InpBB_Sigma              = 2.0;              // BBシグマ倍率
 input int    InpBB_Period              = 20;               // BB計算期間
-input bool   InpAmpFilterOn           = true;             // 振幅フィルターON
-input double InpAmpMultiplier         = 1.0;              // 振幅閾値倍率
-input int    InpAmpLookback           = 20;               // 振幅計算期間
+input double InpDPOSwingMult            = 1.5;              // minSwing = StdDevMax × 倍率
+input int    InpDPOSwingLook           = 20;               // StdDev計算期間
+input int    InpDPOStdDevMaxLook       = 60;               // StdDev最大値ラチェット窓
+input bool   InpPctBFilterOn           = false;            // %Bゲート有効
+input double InpPctB_BuyGate           = 0.2;              // %B BUYゲート
+input double InpPctB_SellGate          = 0.8;              // %B SELLゲート
 
 input group "=== ピラミッドモード ==="
 input ENUM_PYRAMID_MODE InpPyramidMode   = PYRAMID_FIXED;   // ピラミッドモード
@@ -118,18 +121,19 @@ int OnInit()
                               InpMaxCalcBars,
                               InpBB_Sigma,
                               InpBB_Period,
-                              InpAmpFilterOn,
-                              InpAmpMultiplier,
-                              InpAmpLookback,
-                              true,            // Inp_CrossAlertOn
-                              true,            // Inp_TenzokoAlertOn
-                              false,           // Inp_AlertPopup (EA側で制御)
-                              false,           // Inp_AlertSound
-                              false,           // Inp_AlertEmail
-                              false,           // Inp_AlertPush
-                              false,           // Inp_AlertDiscord
-                              "",              // Inp_DiscordURL
-                              false);          // Inp_DiagLog
+                              InpDPOSwingMult,         // v2.01: minSwing倍率
+                              InpDPOSwingLook,         // v2.01: StdDev計算期間
+                              InpDPOStdDevMaxLook,     // v2.01: ラチェット窓
+                              InpPctBFilterOn,         // v2.01: %Bゲート
+                              InpPctB_BuyGate,         // v2.01: BUYゲート
+                              InpPctB_SellGate,        // v2.01: SELLゲート
+                              false,                   // Inp_AlertPopup (EA側で制御)
+                              false,                   // Inp_AlertSound
+                              false,                   // Inp_AlertEmail
+                              false,                   // Inp_AlertPush
+                              false,                   // Inp_AlertDiscord
+                              "",                      // Inp_DiscordURL
+                              false);                  // Inp_DiagLog
 
    if(g_tenzoko_handle == INVALID_HANDLE)
    {
