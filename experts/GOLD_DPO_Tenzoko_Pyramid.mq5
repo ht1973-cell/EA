@@ -27,7 +27,10 @@ enum ENUM_STOP_MODE
 
 // ── 入力パラメータ ──────────────────────────────────
 input group "=== DPO天底インジケーター設定 ==="
-input string InpIndicatorName          = "DPO_Tenzoko_signal_1.02"; // インジケーターファイル名
+input string InpIndicatorName          = "DPO_Tenzoko_signal_v2.01"; // インジケーターファイル名
+input ENUM_TIMEFRAMES InpIndicatorTF   = PERIOD_M20;       // インジケーター計算タイムフレーム
+input int    InpBuyBufferIdx           = 7;                // 天底BUYバッファ番号
+input int    InpSellBufferIdx          = 8;                // 天底SELLバッファ番号
 input int    InpDPO_Period             = 20;               // DPO期間
 input int    InpDPO_MAType             = 0;                // DPO MA方式 (0=SMA, 1=EMA)
 input int    InpMADPO_Period           = 20;               // MADPO期間
@@ -47,7 +50,7 @@ input double InpMartinMultiplier         = 1.3;              // マーチン倍�
 input group "=== ストップ方式 ==="
 input ENUM_STOP_MODE InpStopMode         = STOP_ATR;         // ストップ方式
 input int    InpATRPeriod                = 14;               // ATR期間
-input ENUM_TIMEFRAMES InpATR_TF          = PERIOD_M30;       // ATR計算タイムフレーム
+input ENUM_TIMEFRAMES InpATR_TF          = PERIOD_M20;       // ATR計算タイムフレーム
 input double InpInitStopATR              = 2.0;              // 初期SL ATR倍率
 input double InpTrailATR                 = 3.0;              // トレール ATR倍率
 input int    InpSwingLookback            = 10;               // スイング探索バー数
@@ -106,7 +109,7 @@ int OnInit()
    g_trade.SetExpertMagicNumber(InpMagicNumber);
    g_trade.SetDeviationInPoints(InpSlippage);
 
-   g_tenzoko_handle = iCustom(_Symbol, PERIOD_M30, InpIndicatorName,
+   g_tenzoko_handle = iCustom(_Symbol, InpIndicatorTF, InpIndicatorName,
                               InpDPO_Period,
                               InpDPO_MAType,
                               InpMADPO_Period,
@@ -130,9 +133,15 @@ int OnInit()
 
    if(g_tenzoko_handle == INVALID_HANDLE)
    {
-      Print("Error: Failed to create DPO_Tenzoko indicator handle. Error: ", GetLastError());
+      Print("Error: Failed to create DPO_Tenzoko indicator handle.");
+      Print("  IndicatorName='", InpIndicatorName, "' TF=", EnumToString(InpIndicatorTF),
+            " Error=", GetLastError());
+      Print("  Ensure the indicator file exists in MQL5/Indicators/ folder");
       return INIT_FAILED;
    }
+   Print("DPO_Tenzoko handle created OK. Name='", InpIndicatorName,
+         "' TF=", EnumToString(InpIndicatorTF),
+         " BuyBuf=", InpBuyBufferIdx, " SellBuf=", InpSellBufferIdx);
 
    g_atr_handle = iATR(_Symbol, InpATR_TF, InpATRPeriod);
    if(g_atr_handle == INVALID_HANDLE)
@@ -186,7 +195,7 @@ void OnTick()
       UpdateExtremes();
       UpdateTrailingStop(atr[1]);
 
-      if(IsNewBar(PERIOD_M30, g_last_signal_bar))
+      if(IsNewBar(InpIndicatorTF, g_last_signal_bar))
       {
          int tenz_signal = DetectTenzokoSignal();
 
@@ -205,14 +214,14 @@ void OnTick()
       }
 
       bool pyramid_allowed = (InpMaxPyramid == 0) || (my_pos < InpMaxPyramid);
-      if(pyramid_allowed && IsNewBar(PERIOD_M30, g_last_pyramid_bar))
+      if(pyramid_allowed && IsNewBar(InpIndicatorTF, g_last_pyramid_bar))
          CheckPyramidAdd(atr[1]);
    }
    else
    {
       g_position_direction = 0;
 
-      if(!IsNewBar(PERIOD_M30, g_last_signal_bar)) return;
+      if(!IsNewBar(InpIndicatorTF, g_last_signal_bar)) return;
       if(!SpreadOK()) return;
 
       int tenz_signal = DetectTenzokoSignal();
@@ -255,14 +264,30 @@ int DetectTenzokoSignal()
    ArraySetAsSeries(tenz_buy, true);
    ArraySetAsSeries(tenz_sell, true);
 
-   if(CopyBuffer(g_tenzoko_handle, 7, 0, 3, tenz_buy) < 3) return 0;
-   if(CopyBuffer(g_tenzoko_handle, 8, 0, 3, tenz_sell) < 3) return 0;
+   int copied_buy  = CopyBuffer(g_tenzoko_handle, InpBuyBufferIdx,  0, 3, tenz_buy);
+   int copied_sell = CopyBuffer(g_tenzoko_handle, InpSellBufferIdx, 0, 3, tenz_sell);
 
-   // 確定バー[1]のシグナルを使用（バー[0]は未確定）
+   if(copied_buy < 3 || copied_sell < 3)
+   {
+      static datetime s_last_warn = 0;
+      datetime now = TimeCurrent();
+      if(now - s_last_warn > 60)
+      {
+         Print("CopyBuffer failed: buy_copied=", copied_buy, " sell_copied=", copied_sell,
+               " buyBuf=", InpBuyBufferIdx, " sellBuf=", InpSellBufferIdx,
+               " Error=", GetLastError());
+         s_last_warn = now;
+      }
+      return 0;
+   }
+
    bool has_buy  = (tenz_buy[1]  != EMPTY_VALUE && tenz_buy[1]  != 0);
    bool has_sell = (tenz_sell[1] != EMPTY_VALUE && tenz_sell[1] != 0);
 
-   // 両方同時は稀だが安全側としてBUY優先
+   if(has_buy || has_sell)
+      Print("Tenzoko signal: buy[1]=", tenz_buy[1], " sell[1]=", tenz_sell[1],
+            " has_buy=", has_buy, " has_sell=", has_sell);
+
    if(has_buy && has_sell)
    {
       Print("Warning: Both Tenzoko BUY and SELL on same bar — BUY priority");
@@ -341,12 +366,12 @@ double FindSwingLevel(int direction)
    {
       if(direction == 1)
       {
-         double low_i = iLow(_Symbol, PERIOD_M30, i);
+         double low_i = iLow(_Symbol, InpIndicatorTF, i);
          if(low_i < level) level = low_i;
       }
       else
       {
-         double high_i = iHigh(_Symbol, PERIOD_M30, i);
+         double high_i = iHigh(_Symbol, InpIndicatorTF, i);
          if(high_i > level) level = high_i;
       }
    }
