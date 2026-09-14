@@ -149,15 +149,15 @@ void OnTick()
    ResetDailyIfNeeded();
    if(DailyLossLimitHit()) return;
 
-   double fast[3], slow[3], atr[3], entry_ema[3];
-   if(CopyBuffer(g_fast_ema_handle, 0, 0, 3, fast) < 3) return;
-   if(CopyBuffer(g_slow_ema_handle, 0, 0, 3, slow) < 3) return;
-   if(CopyBuffer(g_atr_handle,      0, 0, 3, atr)  < 3) return;
-   if(CopyBuffer(g_entry_fast_ema_handle, 0, 0, 3, entry_ema) < 3) return;
+   double fast[], slow[], atr[], entry_ema[];
    ArraySetAsSeries(fast, true);
    ArraySetAsSeries(slow, true);
    ArraySetAsSeries(atr,  true);
    ArraySetAsSeries(entry_ema, true);
+   if(CopyBuffer(g_fast_ema_handle, 0, 0, 3, fast) < 3) return;
+   if(CopyBuffer(g_slow_ema_handle, 0, 0, 3, slow) < 3) return;
+   if(CopyBuffer(g_atr_handle,      0, 0, 3, atr)  < 3) return;
+   if(CopyBuffer(g_entry_fast_ema_handle, 0, 0, 3, entry_ema) < 3) return;
 
    if(atr[1] <= 0) return;
 

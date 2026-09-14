@@ -227,13 +227,13 @@ bool IsNewBar()
 //+------------------------------------------------------------------+
 void CheckEntrySignal()
 {
-   double rsi[2], bb_upper[2], bb_lower[2];
-   if(CopyBuffer(g_rsi_handle, 0, 0, 2, rsi)      < 2) return;
-   if(CopyBuffer(g_bb_handle,  1, 0, 2, bb_upper)  < 2) return;
-   if(CopyBuffer(g_bb_handle,  2, 0, 2, bb_lower)  < 2) return;
+   double rsi[], bb_upper[], bb_lower[];
    ArraySetAsSeries(rsi,      true);
    ArraySetAsSeries(bb_upper, true);
    ArraySetAsSeries(bb_lower, true);
+   if(CopyBuffer(g_rsi_handle, 0, 0, 2, rsi)      < 2) return;
+   if(CopyBuffer(g_bb_handle,  1, 0, 2, bb_upper)  < 2) return;
+   if(CopyBuffer(g_bb_handle,  2, 0, 2, bb_lower)  < 2) return;
 
    double low1  = iLow(_Symbol,  InpEntryTF, 1);
    double high1 = iHigh(_Symbol, InpEntryTF, 1);

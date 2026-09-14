@@ -118,12 +118,10 @@ void OnTick()
 {
    if(!IsNewBar()) return;
 
-   // 指標値取得: [0]=形成中, [1]=直前確定, [2]=その前
-   double ema_fast[3], ema_slow[3], atr_buf[3];
+   double ema_fast[], ema_slow[], atr_buf[];
    ArraySetAsSeries(ema_fast, true);
    ArraySetAsSeries(ema_slow, true);
    ArraySetAsSeries(atr_buf,  true);
-
    if(CopyBuffer(g_fast_ema_handle, 0, 0, 3, ema_fast) < 3) return;
    if(CopyBuffer(g_slow_ema_handle, 0, 0, 3, ema_slow) < 3) return;
    if(CopyBuffer(g_atr_handle,      0, 0, 3, atr_buf)  < 3) return;
