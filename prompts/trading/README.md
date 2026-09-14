@@ -26,6 +26,7 @@ Worked runs live in [examples/](examples/). Each one stores the input data, the 
 | Date | Prompt | Instrument | File |
 |------|--------|------------|------|
 | 2026-09-12 | 2 Automated Technical Analyst | GOLD (GCUSD) | [examples/2026-09-12_GOLD_prompt02_technical_analyst.md](examples/2026-09-12_GOLD_prompt02_technical_analyst.md) |
+| 2026-09-12 | 4 Strategy Backtester | GOLD (GCUSD), 2009-2026 | [examples/2026-09-12_GOLD_prompt04_strategy_backtester.md](examples/2026-09-12_GOLD_prompt04_strategy_backtester.md) |
 
 ## How to use / 使い方
 
