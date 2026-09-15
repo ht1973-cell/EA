@@ -5,7 +5,7 @@
 //| SL/トレーリング/ピラミッド: TrendFollow_Pyramid方式                |
 //+------------------------------------------------------------------+
 #property copyright "2026"
-#property version   "1.01"
+#property version   "1.02"
 
 #include <Trade\Trade.mqh>
 
@@ -94,6 +94,8 @@ double g_daily_start_equity;
 datetime g_daily_reset_date;
 
 bool   g_closing_by_signal;
+bool   g_netting_mode;
+int    g_tick_count;
 
 CTrade g_trade;
 
@@ -102,19 +104,22 @@ CTrade g_trade;
 //+------------------------------------------------------------------+
 int OnInit()
 {
-   Print("=== GOLD_DPO_Tenzoko_Pyramid v1.01 OnInit START ===");
+   Print("=== GOLD_DPO_Tenzoko_Pyramid v1.02 OnInit START ===");
    Print("  Symbol=", _Symbol, " Period=", EnumToString(Period()));
-   Print("  MarginMode=", AccountInfoInteger(ACCOUNT_MARGIN_MODE));
+   Print("  Digits=", _Digits, " Point=", DoubleToString(_Point, 10));
+   long margin_mode = AccountInfoInteger(ACCOUNT_MARGIN_MODE);
+   Print("  MarginMode=", margin_mode,
+         (margin_mode == ACCOUNT_MARGIN_MODE_RETAIL_NETTING ? " (NETTING)" :
+          margin_mode == ACCOUNT_MARGIN_MODE_RETAIL_HEDGING ? " (HEDGING)" : " (EXCHANGE)"));
 
-   if(AccountInfoInteger(ACCOUNT_MARGIN_MODE) == ACCOUNT_MARGIN_MODE_RETAIL_NETTING)
-   {
-      Print("Error: Netting account not supported for pyramid EA. MarginMode=NETTING");
-      return INIT_FAILED;
-   }
+   g_netting_mode = (margin_mode == ACCOUNT_MARGIN_MODE_RETAIL_NETTING);
+   if(g_netting_mode)
+      Print("WARNING: Netting account — pyramid disabled, single-position mode");
 
    g_trade.SetExpertMagicNumber(InpMagicNumber);
    g_trade.SetDeviationInPoints(InpSlippage);
 
+   Print("  Creating iCustom handle: '", InpIndicatorName, "' TF=", EnumToString(InpIndicatorTF));
    g_tenzoko_handle = iCustom(_Symbol, InpIndicatorTF, InpIndicatorName,
                               InpDPO_Period,
                               InpDPO_MAType,
@@ -124,38 +129,33 @@ int OnInit()
                               InpMaxCalcBars,
                               InpBB_Sigma,
                               InpBB_Period,
-                              InpDPOSwingMult,         // v2.01: minSwing倍率
-                              InpDPOSwingLook,         // v2.01: StdDev計算期間
-                              InpDPOStdDevMaxLook,     // v2.01: ラチェット窓
-                              InpPctBFilterOn,         // v2.01: %Bゲート
-                              InpPctB_BuyGate,         // v2.01: BUYゲート
-                              InpPctB_SellGate,        // v2.01: SELLゲート
-                              false,                   // Inp_AlertPopup (EA側で制御)
-                              false,                   // Inp_AlertSound
-                              false,                   // Inp_AlertEmail
-                              false,                   // Inp_AlertPush
-                              false,                   // Inp_AlertDiscord
-                              "",                      // Inp_DiscordURL
-                              false);                  // Inp_DiagLog
+                              InpDPOSwingMult,
+                              InpDPOSwingLook,
+                              InpDPOStdDevMaxLook,
+                              InpPctBFilterOn,
+                              InpPctB_BuyGate,
+                              InpPctB_SellGate,
+                              false, false, false, false, false, "", false);
 
    if(g_tenzoko_handle == INVALID_HANDLE)
    {
-      Print("Error: Failed to create DPO_Tenzoko indicator handle.");
-      Print("  IndicatorName='", InpIndicatorName, "' TF=", EnumToString(InpIndicatorTF),
-            " Error=", GetLastError());
-      Print("  Ensure the indicator file exists in MQL5/Indicators/ folder");
+      Print("FATAL: iCustom handle creation failed!");
+      Print("  IndicatorName='", InpIndicatorName, "' TF=", EnumToString(InpIndicatorTF));
+      Print("  Error=", GetLastError());
+      Print("  Check: MQL5/Indicators/", InpIndicatorName, ".ex5 exists?");
       return INIT_FAILED;
    }
-   Print("DPO_Tenzoko handle created OK. Name='", InpIndicatorName,
-         "' TF=", EnumToString(InpIndicatorTF),
-         " BuyBuf=", InpBuyBufferIdx, " SellBuf=", InpSellBufferIdx);
+   Print("  iCustom handle OK (", g_tenzoko_handle, ")  BuyBuf=", InpBuyBufferIdx,
+         " SellBuf=", InpSellBufferIdx);
 
    g_atr_handle = iATR(_Symbol, InpATR_TF, InpATRPeriod);
    if(g_atr_handle == INVALID_HANDLE)
    {
-      Print("Error: Failed to create ATR handle. Error: ", GetLastError());
+      Print("FATAL: ATR handle creation failed! Error=", GetLastError());
       return INIT_FAILED;
    }
+   Print("  ATR handle OK (", g_atr_handle, ")  Period=", InpATRPeriod,
+         " TF=", EnumToString(InpATR_TF));
 
    g_last_signal_bar    = 0;
    g_last_pyramid_bar   = 0;
@@ -167,8 +167,16 @@ int OnInit()
    g_daily_start_equity  = AccountInfoDouble(ACCOUNT_EQUITY);
    g_daily_reset_date    = 0;
    g_closing_by_signal   = false;
+   g_tick_count          = 0;
 
    SyncPositionState();
+
+   Print("  StopMode=", EnumToString(InpStopMode), " InitSL_ATR=", InpInitStopATR,
+         " Trail_ATR=", InpTrailATR);
+   Print("  MaxSpread=", InpMaxSpread, " MaxPyramid=", InpMaxPyramid,
+         " NettingMode=", g_netting_mode);
+   Print("  Magic=", InpMagicNumber, " Risk%=", InpRiskPercent);
+   Print("=== OnInit SUCCEEDED — waiting for ticks ===");
 
    return INIT_SUCCEEDED;
 }
@@ -178,6 +186,7 @@ int OnInit()
 //+------------------------------------------------------------------+
 void OnDeinit(const int reason)
 {
+   Print("=== OnDeinit reason=", reason, " totalTicks=", g_tick_count, " ===");
    if(g_tenzoko_handle != INVALID_HANDLE) IndicatorRelease(g_tenzoko_handle);
    if(g_atr_handle     != INVALID_HANDLE) IndicatorRelease(g_atr_handle);
 }
@@ -187,13 +196,35 @@ void OnDeinit(const int reason)
 //+------------------------------------------------------------------+
 void OnTick()
 {
+   g_tick_count++;
+
+   if(g_tick_count == 1)
+      Print("First tick received. Bid=", SymbolInfoDouble(_Symbol, SYMBOL_BID),
+            " Ask=", SymbolInfoDouble(_Symbol, SYMBOL_ASK),
+            " Spread=", SymbolInfoInteger(_Symbol, SYMBOL_SPREAD));
+
+   if(g_tick_count % 5000 == 0)
+      Print("Tick #", g_tick_count, " Bid=", SymbolInfoDouble(_Symbol, SYMBOL_BID),
+            " Pos=", CountMyPositions(), " Dir=", g_position_direction);
+
    ResetDailyIfNeeded();
    if(DailyLossLimitHit()) return;
 
    double atr[];
    ArraySetAsSeries(atr, true);
-   if(CopyBuffer(g_atr_handle, 0, 0, 3, atr) < 3) return;
-   if(atr[1] <= 0) return;
+   int atr_copied = CopyBuffer(g_atr_handle, 0, 0, 3, atr);
+   if(atr_copied < 3)
+   {
+      if(g_tick_count <= 3)
+         Print("ATR CopyBuffer failed: copied=", atr_copied, " Error=", GetLastError());
+      return;
+   }
+   if(atr[1] <= 0)
+   {
+      if(g_tick_count <= 3)
+         Print("ATR[1] <= 0: ", atr[1]);
+      return;
+   }
 
    int my_pos = CountMyPositions();
 
@@ -208,6 +239,7 @@ void OnTick()
 
          if(tenz_signal != 0 && tenz_signal != g_position_direction)
          {
+            Print("Reverse signal: close all & reopen dir=", tenz_signal);
             g_closing_by_signal = true;
             CloseAllPositions();
             g_closing_by_signal = false;
@@ -215,12 +247,15 @@ void OnTick()
 
             if(SpreadOK())
                OpenNewPosition(tenz_signal, atr[1]);
+            else
+               Print("Reverse entry skipped: spread too wide");
 
             return;
          }
       }
 
-      bool pyramid_allowed = (InpMaxPyramid == 0) || (my_pos < InpMaxPyramid);
+      bool pyramid_allowed = !g_netting_mode &&
+                             ((InpMaxPyramid == 0) || (my_pos < InpMaxPyramid));
       if(pyramid_allowed && IsNewBar(InpIndicatorTF, g_last_pyramid_bar))
          CheckPyramidAdd(atr[1]);
    }
@@ -229,11 +264,25 @@ void OnTick()
       g_position_direction = 0;
 
       if(!IsNewBar(InpIndicatorTF, g_last_signal_bar)) return;
-      if(!SpreadOK()) return;
+
+      if(!SpreadOK())
+      {
+         static datetime s_last_spread_warn = 0;
+         datetime now = TimeCurrent();
+         if(now - s_last_spread_warn > 300)
+         {
+            Print("Entry blocked: spread ", SymbolInfoInteger(_Symbol, SYMBOL_SPREAD),
+                  " > max ", InpMaxSpread);
+            s_last_spread_warn = now;
+         }
+         return;
+      }
 
       int tenz_signal = DetectTenzokoSignal();
       if(tenz_signal == 0) return;
 
+      Print("New entry signal: dir=", tenz_signal, " ATR=", DoubleToString(atr[1], _Digits),
+            " Bid=", DoubleToString(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits));
       OpenNewPosition(tenz_signal, atr[1]);
    }
 }
@@ -315,12 +364,25 @@ void OpenNewPosition(int direction, double current_atr)
    double entry = (direction == 1) ? SymbolInfoDouble(_Symbol, SYMBOL_ASK)
                                    : SymbolInfoDouble(_Symbol, SYMBOL_BID);
    double sl_dist = MathAbs(entry - sl);
-   if(sl_dist < _Point) return;
+   if(sl_dist < _Point)
+   {
+      Print("OpenNewPosition skipped: sl_dist too small. entry=", entry, " sl=", sl);
+      return;
+   }
 
    double lot = CalculateLot(sl_dist, 0);
-   if(lot <= 0) return;
+   if(lot <= 0)
+   {
+      Print("OpenNewPosition skipped: lot=0. sl_dist=", sl_dist, " equity=",
+            AccountInfoDouble(ACCOUNT_EQUITY));
+      return;
+   }
 
    sl = NormalizeDouble(sl, _Digits);
+   Print("Attempting entry: dir=", (direction == 1 ? "BUY" : "SELL"),
+         " lot=", DoubleToString(lot, 2), " entry=", DoubleToString(entry, _Digits),
+         " sl=", DoubleToString(sl, _Digits));
+
    if(ExecuteEntry(direction, lot, sl))
    {
       g_position_direction  = direction;
@@ -328,6 +390,7 @@ void OpenNewPosition(int direction, double current_atr)
       g_last_entry_price    = entry;
       g_highest_since_entry = (direction == 1)  ? entry : 0;
       g_lowest_since_entry  = (direction == -1) ? entry : DBL_MAX;
+      Print("Position opened OK. dir=", g_position_direction);
    }
 }
 
