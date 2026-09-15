@@ -5,8 +5,7 @@
 //| SL/トレーリング/ピラミッド: TrendFollow_Pyramid方式                |
 //+------------------------------------------------------------------+
 #property copyright "2026"
-#property version   "1.00"
-#property strict
+#property version   "1.01"
 
 #include <Trade\Trade.mqh>
 
@@ -103,9 +102,13 @@ CTrade g_trade;
 //+------------------------------------------------------------------+
 int OnInit()
 {
+   Print("=== GOLD_DPO_Tenzoko_Pyramid v1.01 OnInit START ===");
+   Print("  Symbol=", _Symbol, " Period=", EnumToString(Period()));
+   Print("  MarginMode=", AccountInfoInteger(ACCOUNT_MARGIN_MODE));
+
    if(AccountInfoInteger(ACCOUNT_MARGIN_MODE) == ACCOUNT_MARGIN_MODE_RETAIL_NETTING)
    {
-      Print("Error: Netting account not supported for pyramid EA");
+      Print("Error: Netting account not supported for pyramid EA. MarginMode=NETTING");
       return INIT_FAILED;
    }
 
