@@ -1,0 +1,23 @@
+; NM-R50: Nanpin Martingale Risk Mode (DD target 50%)
+; Python backtest: daily-bar simulation only - MT5 tick test required
+InpNMMode=1||0||0||1||N
+InpLotPerUnit=0||0||0||0||N
+InpMaxTotalLot=0||0||0||0||N
+InpGridBasePts=0||0||0||0||N
+InpGridExpand=0||0||0||0||N
+InpMaxLayers=0||0||0||0||N
+InpMartinMult=0||0||0||0||N
+InpBasketTPPts=0||0||0||0||N
+InpTimeoutBars=0||0||0||0||N
+InpEntryTF=16385||0||0||0||N
+InpRSIPeriod=14||7||7||28||N
+InpRSIOversold=30||20||5||40||N
+InpRSIOverbought=70||60||5||80||N
+InpBBPeriod=20||10||5||30||N
+InpBBDeviation=2.0||1.5||0.5||3.0||N
+InpDDThreshold=0||0||0||0||N
+InpMaxDailyLossPct=3.0||1.0||1.0||5.0||N
+InpMinMarginLevel=200||100||50||500||N
+InpMaxSpread=50||20||10||100||N
+InpMagicNumber=20260915||0||0||0||N
+InpSlippage=50||0||0||0||N
